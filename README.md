@@ -9,9 +9,7 @@
 
 To get started, clone this repository and install the dependencies:  
 ```bash
-git clone https://github.com/Kankeu/denspa.git
-cd denspa
-pip install -r requirements.txt
+pip install DenSpa
 ```
 
 ## Quick Start
