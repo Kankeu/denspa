@@ -7,7 +7,7 @@
 
 ## Installation
 
-To get started, clone this repository and install the dependencies:  
+To get started, clone this repository and install the dependencies or use pip:  
 ```bash
 pip install DenSpa
 ```
