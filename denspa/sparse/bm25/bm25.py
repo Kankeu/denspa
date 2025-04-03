@@ -73,19 +73,22 @@ class BM25:
         dfs = np.zeros(len(self.vocab))
         ntds = np.zeros(n)
 
-        last_i = 0
+        last_i = None
         ntd = 0
         for i,j,count in zip(cx.row, cx.col, cx.data):
-            if count>0:
-                dfs[j] += 1
-            if i!=last_i:
+            if last_i is None:
                 last_i = i
-                ntds[i-1] = ntd
+                
+            dfs[j] += 1
+
+            if i!=last_i:
+                ntds[last_i] = ntd
+                last_i = i
                 ntd = 0
             ntd += count
 
-        if 'i' in locals():
-            ntds[i] = ntd
+        if last_i is not None:
+            ntds[last_i] = ntd
 
         for i,j,count in zip(cx.row, cx.col, cx.data):
             tf = count/ntds[i]
@@ -109,17 +112,20 @@ class BM25:
         n = cvectors.shape[0]
         ntds = np.zeros(n)
 
-        last_i = 0
+        last_i = None
         ntd = 0
         for i,j,count in zip(cx.row, cx.col, cx.data):
-            if i!=last_i:
+            if last_i is None:
                 last_i = i
-                ntds[i-1] = ntd
+                
+            if i!=last_i:
+                ntds[last_i] = ntd
+                last_i = i
                 ntd = 0
             ntd += count
 
-        if 'i' in locals():
-            ntds[i] = ntd
+        if last_i is not None:
+            ntds[last_i] = ntd
 
         for i,j,count in zip(cx.row, cx.col, cx.data):
             tf = count/ntds[i]

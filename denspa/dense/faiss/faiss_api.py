@@ -5,13 +5,13 @@ from langchain_community.vectorstores import FAISS
 
 class FAISSAPI:
 
-    def __init__(self,folder_path,index_name,embedding_function):
+    def __init__(self,folder_path,index_name,embedding_function,autoload=True):
         self.embedding_function = embedding_function
         self.folder_path = folder_path
         self.index_name = index_name
         self.faiss = None
         try:
-            if self.exists():
+            if autoload and self.exists():
                 self.faiss = FAISSAPI.load_local(folder_path,index_name,embedding_function=embedding_function).faiss
         except:
             pass
@@ -37,7 +37,7 @@ class FAISSAPI:
 
     @staticmethod
     def load_local(folder_path,index_name,embedding_function):
-        faissAPI = FAISSAPI(folder_path=folder_path,index_name=index_name,embedding_function=embedding_function)
+        faissAPI = FAISSAPI(folder_path=folder_path,index_name=index_name,embedding_function=embedding_function,autoload=False)
         faissAPI.faiss = FAISS.load_local(folder_path=folder_path, embeddings=embedding_function, 
                                           index_name=index_name,allow_dangerous_deserialization=True)
         return faissAPI

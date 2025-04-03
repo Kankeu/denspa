@@ -6,13 +6,13 @@ from .bm25 import BM25
 
 class BM25API:
 
-    def __init__(self,folder_path,index_name,k1=1.25,b=.75):
+    def __init__(self,folder_path,index_name,k1=1.25,b=.75,autoload=True):
         self.folder_path = folder_path
         self.index_name = index_name
         self.bm25 = BM25(k1=k1,b=b)
         self.doc_store = DocStore()
         try:
-            if self.exists():
+            if autoload and self.exists():
                 new = BM25API.load_local(folder_path,index_name)
                 self.bm25 = new.bm25
                 self.doc_store = new.doc_store
@@ -68,7 +68,7 @@ class BM25API:
 
     @staticmethod
     def load_local(folder_path,index_name):
-        bm25API = BM25API(folder_path=folder_path,index_name=index_name)
+        bm25API = BM25API(folder_path=folder_path,index_name=index_name,autoload=False)
         bm25API.bm25 = BM25.load_local(folder_path,index_name+".bm25.index")
         bm25API.doc_store = DocStore.load_local(folder_path,index_name+".bm25.doc_store")
         return bm25API
