@@ -3,6 +3,7 @@ import math
 import scipy
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import joblib
 
 
@@ -134,7 +135,7 @@ class BM25:
         return weights
 
     def search(self,queries,k=5,filter=None):
-        res = self.weights.dot(self.encode(queries).transpose())
+        res = cosine_similarity(self.weights,self.encode(queries))
         results = [[] for _ in range(len(queries))]
         for i in range(res.shape[0]):
             for j in range(res.shape[1]):

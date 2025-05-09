@@ -75,15 +75,15 @@ DenSpa currently supports **three search methods**:
 
 1. **FAISS**: Semantic search that uses dense vectors for similarity.  
 2. **BM25**: Keyword-based search leveraging sparse vectors.  
-3. **Hybrid Search**: A cascade method combining FAISS and BM25. Hybrid search first retrieves the top results using FAISS (high recall) and then applies BM25 on the top-3*k results to refine the selection for the final top-k results (higher precision).  
+3. **Hybrid Search**: A cascade method combining FAISS and BM25. Hybrid search first retrieves the top-k results using FAISS (high recall) and then applies BM25 (high precision) to re-rank the results without changing the FAISS's similarity scores.  
 
 Example usage:  
 ```python
 results = vecsea.similarity_search_with_score(
     query="Quantum mechanics",
     k=3,
-    method="bm25",
-    lang="en"
+    method="bm25" | "faiss" | "cascade",
+    lang="en" | "de"
 )
 ```
 

@@ -58,7 +58,7 @@ class FAISSAPI:
         if len(id_to_remove)==0:
             return self
 
-        res = self.faiss.delete(id_to_remove)
+        self.faiss.delete(id_to_remove)
         self.faiss.index_to_docstore_id = {
             i: _id
             for i, _id in enumerate(self.faiss.index_to_docstore_id.values())

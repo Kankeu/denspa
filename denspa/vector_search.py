@@ -22,9 +22,11 @@ class VectorSearch:
             vectorSearch.faissAPI = vectorSearch.faissAPI.from_documents(documents,folder_path=folder_path,index_name=index_name,embedding_function=embedding_function)
         if engine in ['*','bm25']:
             tokenizer = Tokenizer(lang=lang)
-            for doc in documents:
-                doc.page_content = " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(doc.page_content))
-            vectorSearch.bm25API = vectorSearch.bm25API.from_documents(documents,k1=bm25_options["k1"],b=bm25_options["b"],folder_path=folder_path,index_name=index_name)
+            #for doc in documents:
+            #    doc.page_content = " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(doc.page_content))
+            vectorSearch.bm25API = vectorSearch.bm25API.from_documents(documents,k1=bm25_options["k1"],b=bm25_options["b"],
+                                                                       folder_path=folder_path,index_name=index_name,
+                                                                       preprocess=lambda text: " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(text)))
         return vectorSearch
 
     def add_documents(self,documents,engine='*',lang=None):
@@ -35,13 +37,14 @@ class VectorSearch:
                 self.faissAPI = self.from_documents(documents,engine="faiss",lang=lang,folder_path=self.folder_path,index_name=self.index_name,embedding_function=self.embedding_function,bm25_options=self.bm25_options).faissAPI
         if engine in ['*','bm25']:
             tokenizer = Tokenizer(lang=lang)
-            for doc in documents:
-                doc.page_content = " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(doc.page_content))
+            #for doc in documents:
+            #    doc.page_content = " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(doc.page_content))
             if self.bm25API.exists():
-                self.bm25API.add_documents(documents)
+                self.bm25API.add_documents(documents,preprocess=lambda text: " ".join(tokenizer.stem(token) for token in tokenizer.tokenize(text)))
             else:
                 self.bm25API = self.from_documents(documents,engine="bm25",lang=lang,folder_path=self.folder_path,index_name=self.index_name,embedding_function=self.embedding_function,bm25_options=self.bm25_options).bm25API
         return self
+
 
     def save_local(self,folder_path=None,index_name=None):
         folder_path = self.folder_path if folder_path is None else folder_path
@@ -88,10 +91,14 @@ class VectorSearch:
             tokenizer = Tokenizer(lang=lang)
             return self.bm25API.similarity_search_with_score(" ".join(tokenizer.stem(token) for token in tokenizer.tokenize(query)),k=k,filter=filter)
         else:
-            faiss_results = self.faissAPI.similarity_search_with_score(query,k=k*3,filter=filter)
+            faiss_results = self.faissAPI.similarity_search_with_score(query,k=k,filter=filter)
             def filter_func(metadata):
                 return (filter is None or filter(metadata)) and any(all(metadata.get(k,None)==v for k,v in doc.metadata.items()) for doc,_ in faiss_results)
             tokenizer = Tokenizer(lang=lang)
-            results = self.bm25API.similarity_search_with_score(" ".join(tokenizer.stem(token) for token in tokenizer.tokenize(query)),k=k,filter=lambda metadata: filter_func(metadata))
-            results = results if len(results)>0 else [r for r in faiss_results if r[1]>=1]
-        return results[:k]
+            bm25_results = self.bm25API.similarity_search_with_score(" ".join(tokenizer.stem(token) for token in tokenizer.tokenize(query)),k=k,filter=lambda metadata: filter_func(metadata))
+            
+            def findI(metadata):
+                return [i for i,(doc,_) in enumerate(faiss_results) if all(metadata.get(k,None)==v for k,v in doc.metadata.items())][0]
+            indexes = [findI(doc.metadata) for doc,_ in bm25_results]
+            indexes += [i for i in range(len(faiss_results)) if i not in indexes]
+        return [faiss_results[idx] for idx in indexes]

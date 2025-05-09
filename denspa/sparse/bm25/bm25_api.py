@@ -20,11 +20,10 @@ class BM25API:
             pass
 
     @staticmethod
-    def from_documents(documents,folder_path,index_name,k1=1.25,b=.75):
+    def from_documents(documents,folder_path,index_name,k1=1.25,b=.75,preprocess=None):
         bm25API = BM25API(k1=k1,b=b,folder_path=folder_path,index_name=index_name)
-        bm25API.bm25.fit([doc.page_content for doc in documents])
-        for key,doc in enumerate(documents):
-            bm25API.doc_store.put(key,doc)
+        bm25API.bm25.fit([doc.page_content if preprocess is None else preprocess(doc.page_content) for doc in documents])
+        bm25API.doc_store.add(documents)
         return bm25API
 
     def get_token_weights(self,token):
@@ -49,14 +48,13 @@ class BM25API:
             data[id2token[id]] = weights[i,id]
         return data
     
-    def add_documents(self,documents):
+    def add_documents(self,documents,preprocess=None):
+        texts = [doc.page_content if preprocess is None else preprocess(doc.page_content) for doc in documents]
         if self.bm25.is_empty():
-            self.bm25.fit([doc.page_content for doc in documents])
+            self.bm25.fit(texts)
         else:
-            self.bm25.merge(BM25(k1=self.bm25.get_k1(),b=self.bm25.get_b()).fit([doc.page_content for doc in documents]))
-        key_offset = 0 if self.doc_store.is_empty() else self.doc_store.get_last_key()+1
-        for key,doc in enumerate(documents):
-            self.doc_store.put(key_offset+key,doc)
+            self.bm25.merge(BM25(k1=self.bm25.get_k1(),b=self.bm25.get_b()).fit(texts))
+        self.doc_store.add(documents)
         return self
 
     def save_local(self,folder_path=None,index_name=None):
@@ -81,8 +79,8 @@ class BM25API:
     def removeByMetadata(self,metadata):
         keys = [key for key,_ in self.doc_store.search(metadata)]
         self.bm25.remove(keys)
-        for key in keys:
-            self.doc_store.remove(key)
+        self.doc_store.remove(keys)
+        
         return self
 
     def similarity_search_with_score(self, query, k = 5,filter=None):

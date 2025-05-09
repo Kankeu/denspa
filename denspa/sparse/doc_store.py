@@ -1,30 +1,31 @@
 import joblib
-
+from itertools import compress
 
 class DocStore:
 
-    def __init__(self,documents={}):
-        self.documents = documents
+    def __init__(self,documents=[]):
+        self._documents = documents
 
     def get(self,key):
-        return self.documents[key]
+        return self._documents[key]
 
-    def put(self,key,value):
-        self.documents[key] = value
+    def add(self,values):
+        self._documents += values
         return self
 
-    def remove(self,key):
-        del self.documents[key]
+    def remove(self,keys):
+        key_set = frozenset(keys)        
+        mask = [i not in key_set for i in range(len(self._documents))]
+        self._documents = list(compress(self._documents, mask))
+        
         return self
-    def get_last_key(self):
-        return next(reversed(self.documents.keys()))
 
     def is_empty(self):
-        return len(self.documents.keys())==0
+        return len(self._documents)==0
 
     def search(self,metadata):
         documents = []
-        for key,doc in self.documents.items():
+        for key,doc in enumerate(self._documents):
             if all(doc.metadata.get(k,None)==v for k,v in metadata.items()):
                 documents.append((key,doc))
         return documents
